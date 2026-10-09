@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}}</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0B0D18; --bg2:#11142340; --panel:#141829; --panel2:#1A1F35;
+  --line:#2A3150; --gold:#C5A569; --gold-dim:#8E7645;
+  --ink:#F0EBE0; --ink2:#A8B0C8; --ink3:#6E7793;
+  --up:#E8464B;   /* 涨/正 红 */
+  --down:#19B37A; /* 跌/负 绿 */
+  --warn:#E8A33D; --info:#4C8DF6; --purple:#8B6FE8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:
+    radial-gradient(1200px 600px at 10% -10%, #1B2244 0%, transparent 60%),
+    radial-gradient(900px 500px at 95% 0%, #2A1F33 0%, transparent 55%),
+    var(--bg);
+  color:var(--ink);font-family:"Microsoft YaHei","微软雅黑","PingFang SC",-apple-system,sans-serif;
+  line-height:1.65;padding:0 0 80px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+/* ===== HERO ===== */
+header{padding:56px 0 36px;border-bottom:1px solid var(--line);margin-bottom:40px;position:relative;overflow:hidden}
+header:after{content:"";position:absolute;right:-60px;top:20px;width:260px;height:260px;
+  border:1px solid var(--gold);opacity:.1;border-radius:50%}
+.kicker{color:var(--gold);letter-spacing:.32em;font-size:12px;font-weight:700;margin-bottom:14px}
+h1{font-size:40px;font-weight:800;letter-spacing:-.5px;line-height:1.2}
+h1 em{font-style:normal;background:linear-gradient(100deg,var(--gold),#F0DFB8 55%,var(--gold-dim));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--ink2);margin-top:14px;font-size:15px}
+.tags{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.tag{font-size:12px;padding:5px 12px;border:1px solid var(--line);border-radius:20px;color:var(--ink2);background:#12172B}
+
+/* ===== SECTION ===== */
+section{margin:46px 0}
+h2{font-size:23px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:12px}
+h2 .no{font-size:12px;color:var(--gold);border:1px solid var(--gold-dim);border-radius:6px;
+  padding:3px 8px;font-weight:700;letter-spacing:.08em;flex:none}
+.lead{color:var(--ink2);font-size:14px;margin-bottom:22px;max-width:860px}
+h3{font-size:16px;font-weight:700;margin:26px 0 12px;color:var(--ink);display:flex;align-items:center;gap:8px}
+h3:before{content:"";width:3px;height:15px;background:var(--gold);border-radius:2px}
+
+/* ===== CARDS ===== */
+.grid{display:grid;gap:16px}
+.g6{grid-template-columns:repeat(6,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.card{background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid var(--line);
+  border-radius:14px;padding:18px 18px 16px;position:relative;overflow:hidden}
+.card.hl{border-color:var(--gold-dim)}
+.card .lbl{font-size:12px;color:var(--ink3);letter-spacing:.06em;margin-bottom:8px;white-space:nowrap}
+.card .val{font-size:26px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.card .unit{font-size:13px;font-weight:600;color:var(--ink2);margin-left:3px}
+.card .foot{font-size:11.5px;color:var(--ink3);margin-top:7px}
+.pos{color:var(--up)} .neg{color:var(--down)} .gold{color:var(--gold)}
+
+/* ===== PANEL / CHART ===== */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+.chartbox{position:relative;height:300px}
+.chartbox.tall{height:340px}
+.cap{font-size:11.5px;color:var(--ink3);margin-top:12px;line-height:1.6}
+
+/* ===== TABLE ===== */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#1B2139;color:var(--gold);font-weight:700;text-align:left;padding:11px 13px;
+  white-space:nowrap;border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.04em}
+td{padding:10px 13px;border-bottom:1px solid #1E2440;color:var(--ink2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#171C31}
+td.n{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+tr.total td{background:#1A2038;color:var(--ink);font-weight:800;border-top:1px solid var(--gold-dim)}
+.bar{height:6px;background:#232A47;border-radius:4px;overflow:hidden;min-width:70px}
+.bar i{display:block;height:100%;border-radius:4px}
+.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:5px;font-weight:700}
+.p-h{background:#3A1A1F;color:#F08A8E}
+.p-mh{background:#3A2A18;color:#E8B366}
+.p-m{background:#1B2E3F;color:#6FB3E8}
+.p-ml{background:#15302A;color:#5FCCA3}
+.p-l{background:#232A47;color:#9AA4C0}
+
+/* ===== ISSUE LIST ===== */
+.issue{border:1px solid var(--line);border-left-width:3px;border-radius:12px;background:var(--panel);
+  padding:16px 18px;margin-bottom:12px}
+.issue.p0{border-left-color:var(--up)}
+.issue.p1{border-left-color:var(--warn)}
+.issue.p2{border-left-color:var(--info)}
+.issue .head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.issue .pr{font-size:11px;font-weight:800;padding:2px 8px;border-radius:5px;letter-spacing:.06em}
+.p0 .pr{background:#3A1A1F;color:#FF8B8F}
+.p1 .pr{background:#3A2A18;color:#FFC472}
+.p2 .pr{background:#15253F;color:#8FBEFF}
+.issue .ti{font-weight:700;font-size:15px;color:var(--ink)}
+.issue .bd{font-size:13.5px;color:var(--ink2)}
+.issue .bd b{color:var(--ink)}
+.issue .fix{margin-top:9px;font-size:13px;color:var(--gold);background:#1C1A13;
+  border:1px dashed var(--gold-dim);border-radius:8px;padding:8px 11px}
+
+/* ===== STEP ===== */
+.step{display:flex;gap:16px;margin-bottom:14px}
+.step .idx{flex:none;width:38px;height:38px;border-radius:10px;background:#1C2238;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--gold);font-size:14px}
+.step .bd{flex:1}
+.step .bd .t{font-weight:700;margin-bottom:3px}
+.step .bd .d{font-size:13.5px;color:var(--ink2)}
+
+.score{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.ring{position:relative;width:170px;height:170px;flex:none}
+.ring .txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .txt b{font-size:44px;font-weight:800;color:var(--gold);line-height:1}
+.ring .txt span{font-size:12px;color:var(--ink3);margin-top:4px}
+
+.note{background:#161B2E;border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+  font-size:13px;color:var(--ink2);margin-top:16px}
+.note b{color:var(--gold)}
+footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);font-size:12px;color:var(--ink3)}
+
+@media(max-width:980px){.g6,.g4{grid-template-columns:repeat(2,1fr)}.g3,.g2{grid-template-columns:1fr}h1{font-size:30px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============================================================
+  使用说明（生成后请删除本注释）
+  1. 所有 {{XXX}} 为待替换占位符
+  2. JS 底部「DATA」区块是唯一需要改数据的地方
+  3. 中文内容里的引号一律用「」，禁用 ASCII 直引号 " —— 会破坏 JS 字符串
+  4. 写完必须 node --check 校验内联脚本
+  5. 涨/正=红 #E8464B，跌/负=绿 #19B37A（中国市场惯例，勿反）
+============================================================= -->
+
+<header>
+  <div class="kicker">PERSONAL BALANCE SHEET DIAGNOSIS</div>
+  <h1>个人财务体检与<em>投资诊断报告</em></h1>
+  <div class="sub">数据口径：{{PERIOD}}（含 {{HIST_RANGE}} 共 {{N_PERIODS}} 期历史）· 金融资产 {{N_HOLDINGS}} 笔在持仓位 · 负债 {{N_DEBTS}} 项</div>
+  <div class="tags">
+    <span class="tag">净资产 {{NET_WORTH}}</span>
+    <span class="tag">金融资产 {{FIN_ASSETS}}</span>
+    <span class="tag">总负债 {{TOT_DEBT}}</span>
+    <span class="tag">资产负债率 {{DEBT_RATIO}}</span>
+    <span class="tag">被动收入占比 {{PASSIVE_PCT}}</span>
+  </div>
+</header>
+
+<!-- ============ 01 核心指标 ============ -->
+<section>
+  <h2><span class="no">01</span>核心指标速览</h2>
+  <p class="lead">{{LEAD_01}}</p>
+  <div class="grid g6">
+    <div class="card hl"><div class="lbl">净资产</div><div class="val gold">{{KPI1_V}}<span class="unit">{{KPI1_U}}</span></div><div class="foot">{{KPI1_F}}</div></div>
+    <div class="card"><div class="lbl">金融资产市值</div><div class="val">{{KPI2_V}}<span class="unit">{{KPI2_U}}</span></div><div class="foot">{{KPI2_F}}</div></div>
+    <div class="card"><div class="lbl">不动产估值</div><div class="val">{{KPI3_V}}<span class="unit">{{KPI3_U}}</span></div><div class="foot">{{KPI3_F}}</div></div>
+    <div class="card"><div class="lbl">总负债（现）</div><div class="val">{{KPI4_V}}<span class="unit">{{KPI4_U}}</span></div><div class="foot">{{KPI4_F}}</div></div>
+    <div class="card"><div class="lbl">资产负债率</div><div class="val">{{KPI5_V}}<span class="unit">%</span></div><div class="foot">{{KPI5_F}}</div></div>
+    <div class="card"><div class="lbl">被动收入占比</div><div class="val {{KPI6_CLS}}">{{KPI6_V}}<span class="unit">%</span></div><div class="foot">{{KPI6_F}}</div></div>
+  </div>
+  <div class="note"><b>关键提醒：</b>{{NOTE_01}}</div>
+</section>
+
+<!-- ============ 02 健康度评分 ============ -->
+<section>
+  <h2><span class="no">02</span>财务健康度评分</h2>
+  <p class="lead">{{LEAD_02}}</p>
+  <div class="panel">
+    <div class="score">
+      <div class="ring">
+        <canvas id="ringChart"></canvas>
+        <div class="txt"><b>{{SCORE}}</b><span>{{SCORE_LABEL}}</span></div>
+      </div>
+      <div style="flex:1;min-width:320px"><div class="chartbox" style="height:300px"><canvas id="radarChart"></canvas></div></div>
+    </div>
+    <div class="cap">{{SCORE_LOGIC}}</div>
+  </div>
+</section>
+
+<!-- ============ 03 资产结构 ============ -->
+<section>
+  <h2><span class="no">03</span>资产结构解剖</h2>
+  <p class="lead">{{LEAD_03}}</p>
+  <div class="grid g2">
+    <div class="panel"><h3 style="margin-top:0">大类配置</h3><div class="chartbox"><canvas id="pieChart"></canvas></div></div>
+    <div class="panel"><h3 style="margin-top:0">风险等级暴露（按市值）</h3><div class="chartbox"><canvas id="riskChart"></canvas></div>
+      <div class="cap">{{CAP_RISK}}</div>
+    </div>
+  </div>
+  <h3>在持仓位明细（{{N_HOLDINGS}} 笔，按市值降序）</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>#</th><th>名称</th><th>类别</th><th>风险</th><th style="text-align:right">市值 (¥)</th><th style="text-align:right">成本 (¥)</th><th style="text-align:right">累计收益率</th><th style="text-align:right">占比</th><th>集中度</th></tr></thead>
+      <tbody id="holdBody"></tbody>
+      <tr class="total"><td></td><td>合计</td><td>—</td><td>—</td><td class="n">{{SUM_MV}}</td><td class="n">{{SUM_COST}}</td><td class="n {{SUM_CLS}}">{{SUM_RET}}</td><td class="n">100%</td><td></td></tr>
+    </table>
+  </div>
+  <div class="note">{{NOTE_03}}</div>
+</section>
+
+<!-- ============ 04 负债结构 ============ -->
+<section>
+  <h2><span class="no">04</span>负债结构解剖</h2>
+  <p class="lead">{{LEAD_04}}</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>类型</th><th>名称</th><th>来源</th><th style="text-align:right">原负债 (¥)</th><th style="text-align:right">现负债 (¥)</th><th style="text-align:right">已结清 (¥)</th><th style="text-align:right">结清率</th><th style="min-width:120px">进度</th><th>优先级</th></tr></thead>
+      <tbody id="debtBody"></tbody>
+      <tr class="total"><td>总计</td><td>—</td><td>—</td><td class="n">{{D_ORIG}}</td><td class="n">{{D_NOW}}</td><td class="n">{{D_PAID}}</td><td class="n">{{D_RATE}}</td><td><div class="bar"><i style="width:{{D_RATE_N}}%;background:var(--gold)"></i></div></td><td></td></tr>
+    </table>
+  </div>
+  <div class="note">{{NOTE_04}}</div>
+</section>
+
+<!-- ============ 05 趋势 ============ -->
+<section>
+  <h2><span class="no">05</span>{{TITLE_05}}</h2>
+  <p class="lead">{{LEAD_05}}</p>
+  <div class="panel"><div class="chartbox tall"><canvas id="trendChart"></canvas></div>
+    <div class="cap">{{CAP_TREND}}</div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="panel"><h3 style="margin-top:0">月度浮动盈亏</h3><div class="chartbox"><canvas id="pnlChart"></canvas></div>
+      <div class="cap">{{CAP_PNL}}</div>
+    </div>
+    <div class="panel"><h3 style="margin-top:0">收入结构与赚钱效率</h3>
+      <div class="grid g2" style="gap:12px">
+        <div class="card"><div class="lbl">工资收入 / 月</div><div class="val" style="font-size:22px">{{INC1}}<span class="unit">元</span></div><div class="foot">{{INC1_F}}</div></div>
+        <div class="card"><div class="lbl">被动稳定收入</div><div class="val" style="font-size:22px">{{INC2}}<span class="unit">元</span></div><div class="foot">{{INC2_F}}</div></div>
+        <div class="card"><div class="lbl">被动风险收入</div><div class="val {{INC3_CLS}}" style="font-size:22px">{{INC3}}<span class="unit">元</span></div><div class="foot">{{INC3_F}}</div></div>
+        <div class="card"><div class="lbl">赚钱效率</div><div class="val" style="font-size:22px">{{INC4}}<span class="unit">元/天</span></div><div class="foot">{{INC4_F}}</div></div>
+      </div>
+      <div class="cap" style="margin-top:14px">{{CAP_INCOME}}</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 问题清单 ============ -->
+<section>
+  <h2><span class="no">06</span>诊断问题清单</h2>
+  <p class="lead">{{LEAD_06}}</p>
+  <div id="issues"></div>
+</section>
+
+<!-- ============ 07 行动方案 ============ -->
+<section>
+  <h2><span class="no">07</span>投资与理财行动方案</h2>
+  <p class="lead">{{LEAD_07}}</p>
+
+  <h3>第一阶段 · 立刻执行（0-1 个月，确定性收益）</h3>
+  <div class="panel" id="stage1"></div>
+
+  <h3>第二阶段 · 结构优化（1-3 个月）</h3>
+  <div class="panel" id="stage2"></div>
+
+  <h3>第三阶段 · 长期机制（3-12 个月）</h3>
+  <div class="panel" id="stage3"></div>
+
+  <h3>目标配置对比</h3>
+  <div class="panel"><div class="chartbox tall"><canvas id="allocChart"></canvas></div>
+    <div class="cap">{{CAP_ALLOC}}</div>
+  </div>
+</section>
+
+<footer>
+  报告生成时间 {{GEN_TIME}} · 数据来源：{{SOURCE}}<br>
+  本报告为基于你所提供数据的结构化分析与一般性财务规划建议，不构成任何具体证券、基金或保险产品的投资推荐。所有数字（尤其房产估值、贷款利率、月度支出）请以实际对账单复核为准；涉及提前还款的操作请先向银行确认违约金条款。
+</footer>
+
+</div>
+
+<script>
+/* ==================================================================
+   DATA —— 唯一需要替换的区块
+   ⚠️ 中文内容里禁用 ASCII 直引号，统一用「」
+   ================================================================== */
+
+/* 持仓：[名称, 类别, 风险文字, 风险码(h/mh/m/ml/l), 市值, 成本, 收益率(小数, null=已回本套利)] */
+const HOLD=[
+ ["示例-某短债基金C","债券型-短债","中低","ml",301632.01,300000,0.0054],
+ ["示例-某宽基ETF联接A","股票型-指数","中高","mh",62382.63,45420,0.3735]
+];
+const TOT=/*金融资产总市值*/364014.64;
+
+/* 负债：[类型, 名称, 来源, 原负债, 现负债, 已结清, 结清率(小数), 优先级文案, 优先级码(p0/p1/p2/ok)] */
+const DEBT=[
+ ["房贷","示例房贷","工商银行",720000,576540.46,143459.54,0.1992,"低（本金口径，利率待确认）","p2"],
+ ["花呗","蚂蚁花呗","支付宝",3085.87,3085.87,0,0,"★★ 立即清零","p0"]
+];
+
+/* 问题：[优先级码, 优先级标签, 标题, 正文HTML, 处置建议] */
+const ISSUES=[
+ ["p0","P0","高息负债与低息资产并存（负利差约 13-17%）",
+  "现状描述，含具体数字与对比参照。<b>关键数字加粗</b>。",
+  "可执行动作 + 预期收益/节省金额。"]
+];
+
+/* 行动步骤：[阶段(1/2/3), 标题, 说明HTML] */
+const STEPS=[
+ [1,"清零循环信用负债 ¥X","从货基直接划转。年化省息约 ¥N。"],
+ [2,"拆分超红线持仓","保留 ≤15%，转出部分分三份。"],
+ [3,"建立核心-卫星目标配置","核心 60% 固收安全垫，卫星 40% 承担增长。"]
+];
+
+/* 六维评分 [资产结构,负债健康,流动性管理,收益能力,被动收入,风险分散] */
+const RADAR=[62,70,85,45,10,50];
+const RADAR_BASE=[75,75,75,70,50,75];
+const SCORE=58;
+
+/* 大类配置 */
+const ALLOC_PIE={labels:["债券/固收类","现金·货币基金","个股（高风险）","权益类基金"],
+                 data:[511858.52,145937.02,136255.77,108888.02]};
+/* 风险等级 [低,中低,中,中高,高] */
+const RISK_BAR=[145937.02,511858.52,32017.91,76870.11,136255.77];
+
+/* 趋势 */
+const T_LABELS=["2026-01","2026-02","2026-03"];
+const T_ASSET=[683028.70,791606.26,829752.93];
+const T_DEBT=[1343281.35,1339359.44,1326989.27];
+const T_PROFIT=[38571.33,37114.11,21702.95];
+const T_DEBT_LABEL="负债余额";
+
+/* 月度盈亏（涨红跌绿） */
+const P_LABELS=["26-01","26-02","26-03"];
+const P_DATA=[0,108577.56,38146.67];
+
+/* 当前 vs 目标配置（两组各自必须合计 100%） */
+const ALLOC_LABELS=["现金/货基","短债·同业存单·政金债","A股宽基(300/500)","红利低波","海外(纳指100/标普)","个股","行业/主题基金","黄金ETF"];
+const ALLOC_NOW=[16.2,56.7,6.9,0,0.2,15.1,4.9,0];
+const ALLOC_TGT=[11.7,50.0,11.7,8.2,7.0,8.5,0,2.9];
+const ALLOC_NOW_LABEL="当前";
+const ALLOC_TGT_LABEL="目标（已还高息债）";
+
+/* ================== 以下为渲染逻辑，通常无需修改 ================== */
+const RCLS={h:"p-h",mh:"p-mh",m:"p-m",ml:"p-ml",l:"p-l"};
+const fmt=n=>n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+document.getElementById('holdBody').innerHTML=HOLD.map((r,i)=>{
+ const w=r[4]/TOT*100;
+ const ret=r[6]===null?'<span class="gold">已回本套利</span>':
+   `<span class="${r[6]>=0?'pos':'neg'}">${r[6]>=0?'+':''}${(r[6]*100).toFixed(2)}%</span>`;
+ const col=w>25?'var(--up)':w>10?'var(--warn)':'var(--info)';
+ return `<tr><td>${i+1}</td><td style="color:var(--ink);white-space:normal;min-width:200px">${r[0]}</td>
+ <td>${r[1]}</td><td><span class="pill ${RCLS[r[3]]}">${r[2]}</span></td>
+ <td class="n">${fmt(r[4])}</td><td class="n">${fmt(r[5])}</td><td class="n">${ret}</td>
+ <td class="n">${w.toFixed(2)}%</td>
+ <td><div class="bar"><i style="width:${Math.min(w*3,100)}%;background:${col}"></i></div></td></tr>`}).join('');
+
+const PC={p0:'var(--up)',p1:'var(--warn)',p2:'var(--info)',ok:'var(--down)'};
+document.getElementById('debtBody').innerHTML=DEBT.map(d=>
+ `<tr><td style="color:var(--ink)">${d[0]}</td><td style="white-space:normal;min-width:170px">${d[1]}</td><td>${d[2]}</td>
+ <td class="n">${fmt(d[3])}</td><td class="n" style="color:${d[4]>0?'var(--ink)':'var(--down)'}">${fmt(d[4])}</td>
+ <td class="n">${fmt(d[5])}</td><td class="n">${(d[6]*100).toFixed(2)}%</td>
+ <td><div class="bar"><i style="width:${d[6]*100}%;background:${d[6]===1?'var(--down)':'var(--gold)'}"></i></div></td>
+ <td style="color:${PC[d[8]]};font-weight:700;white-space:normal;min-width:130px">${d[7]}</td></tr>`).join('');
+
+document.getElementById('issues').innerHTML=ISSUES.map(x=>
+ `<div class="issue ${x[0]}"><div class="head"><span class="pr">${x[1]}</span><span class="ti">${x[2]}</span></div>
+ <div class="bd">${x[3]}</div><div class="fix">▸ 处置建议：${x[4]}</div></div>`).join('');
+
+[1,2,3].forEach(st=>{
+ const el=document.getElementById('stage'+st);
+ if(!el)return;
+ el.innerHTML=STEPS.filter(s=>s[0]===st).map((s,i)=>
+  `<div class="step"><div class="idx">${String(STEPS.filter(a=>a[0]<st).length+i+1).padStart(2,'0')}</div>
+   <div class="bd"><div class="t">${s[1]}</div><div class="d">${s[2]}</div></div></div>`).join('');
+});
+
+/* ---------- Charts ---------- */
+const G='#C5A569', INK='#A8B0C8', GRID='#242B47';
+if(window.Chart){
+Chart.defaults.color=INK;
+Chart.defaults.font.family='"Microsoft YaHei","PingFang SC",sans-serif';
+Chart.defaults.font.size=11.5;
+
+new Chart(document.getElementById('ringChart'),{type:'doughnut',
+ data:{datasets:[{data:[SCORE,100-SCORE],backgroundColor:[G,'#232A47'],borderWidth:0,cutout:'80%'}]},
+ options:{plugins:{legend:{display:false},tooltip:{enabled:false}},responsive:true,maintainAspectRatio:false}});
+
+new Chart(document.getElementById('radarChart'),{type:'radar',
+ data:{labels:['资产结构','负债健康','流动性管理','收益能力','被动收入','风险分散'],
+  datasets:[{label:'当前',data:RADAR,borderColor:G,backgroundColor:'rgba(197,165,105,.18)',
+    pointBackgroundColor:G,borderWidth:2},
+   {label:'健康基准',data:RADAR_BASE,borderColor:'#4C8DF6',backgroundColor:'rgba(76,141,246,.08)',
+    pointBackgroundColor:'#4C8DF6',borderWidth:1.5,borderDash:[4,4]}]},
+ options:{responsive:true,maintainAspectRatio:false,
+  scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:'transparent',color:'#5B6480'},
+   grid:{color:GRID},angleLines:{color:GRID},pointLabels:{color:INK,font:{size:12}}}},
+  plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:14}}}}});
+
+const pieSum=ALLOC_PIE.data.reduce((a,b)=>a+b,0);
+new Chart(document.getElementById('pieChart'),{type:'doughnut',
+ data:{labels:ALLOC_PIE.labels.map((l,i)=>l+' '+(ALLOC_PIE.data[i]/pieSum*100).toFixed(1)+'%'),
+  datasets:[{data:ALLOC_PIE.data,
+   backgroundColor:['#4C8DF6','#19B37A','#E8464B','#C5A569','#8B6FE8','#E8A33D'],
+   borderColor:'#141829',borderWidth:3,cutout:'52%'}]},
+ options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{position:'right',labels:{boxWidth:11,padding:12}},
+   tooltip:{callbacks:{label:c=>' ¥'+c.raw.toLocaleString()+'  ('+(c.raw/pieSum*100).toFixed(1)+'%)'}}}}});
+
+new Chart(document.getElementById('riskChart'),{type:'bar',
+ data:{labels:['低风险','中低风险','中风险','中高风险','高风险'],
+  datasets:[{data:RISK_BAR,
+   backgroundColor:['#19B37A','#4C8DF6','#8B6FE8','#E8A33D','#E8464B'],borderRadius:6,barThickness:34}]},
+ options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' ¥'+c.raw.toLocaleString()+'  ('+(c.raw/TOT*100).toFixed(1)+'%)'}}},
+  scales:{x:{grid:{color:GRID},ticks:{callback:v=>(v/10000)+'万'}},y:{grid:{display:false}}}}});
+
+new Chart(document.getElementById('trendChart'),{type:'line',
+ data:{labels:T_LABELS,datasets:[
+  {label:'金融资产市值',data:T_ASSET,borderColor:G,backgroundColor:'rgba(197,165,105,.12)',
+   fill:true,tension:.3,borderWidth:2.5,pointRadius:2.5},
+  {label:T_DEBT_LABEL,data:T_DEBT,borderColor:'#E8464B',backgroundColor:'rgba(232,70,75,.07)',
+   fill:true,tension:.3,borderWidth:2,pointRadius:2.5},
+  {label:'累计投资收益',data:T_PROFIT,borderColor:'#4C8DF6',backgroundColor:'transparent',
+   tension:.3,borderWidth:1.8,pointRadius:2,borderDash:[5,4]}]},
+ options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+  plugins:{legend:{position:'top',labels:{boxWidth:12,padding:14}},
+   tooltip:{callbacks:{label:c=>' '+c.dataset.label+'：¥'+c.raw.toLocaleString()}}},
+  scales:{x:{grid:{color:GRID},ticks:{maxRotation:45,minRotation:45}},
+   y:{grid:{color:GRID},ticks:{callback:v=>(v/10000).toFixed(0)+'万'}}}}});
+
+new Chart(document.getElementById('pnlChart'),{type:'bar',
+ data:{labels:P_LABELS,
+  datasets:[{data:P_DATA,backgroundColor:P_DATA.map(v=>v>=0?'#E8464B':'#19B37A'),borderRadius:5}]},
+ options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' ¥'+c.raw.toLocaleString()}}},
+  scales:{x:{grid:{display:false}},y:{grid:{color:GRID},ticks:{callback:v=>(v/10000).toFixed(1)+'万'}}}}});
+
+new Chart(document.getElementById('allocChart'),{type:'bar',
+ data:{labels:ALLOC_LABELS,datasets:[
+   {label:ALLOC_NOW_LABEL,data:ALLOC_NOW,backgroundColor:'#3A4366',borderRadius:5,barPercentage:.75},
+   {label:ALLOC_TGT_LABEL,data:ALLOC_TGT,backgroundColor:G,borderRadius:5,barPercentage:.75}]},
+ options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{position:'top',labels:{boxWidth:12,padding:14}},
+   tooltip:{callbacks:{label:c=>' '+c.dataset.label+'：'+c.raw+'%'}}},
+  scales:{x:{grid:{display:false},ticks:{maxRotation:30,minRotation:0,font:{size:11}}},
+   y:{grid:{color:GRID},ticks:{callback:v=>v+'%'},title:{display:true,text:'占金融资产比例',color:'#6E7793'}}}}});
+}else{
+ document.querySelectorAll('.chartbox').forEach(e=>e.innerHTML='<div style="display:flex;height:100%;align-items:center;justify-content:center;color:#6E7793;font-size:13px">图表需联网加载 Chart.js</div>');
+}
+</script>
+</body>
+</html>
